@@ -1,0 +1,29 @@
+import 'package:dio/dio.dart';
+import 'package:get_it/get_it.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import '../../api_config.dart';
+import '../../data/jokes_repository.dart';
+import '../../cubit/jokes_cubit.dart';
+import '../network/api_key_interceptor.dart';
+
+final getIt = GetIt.instance;
+
+void setupDependencies() {
+  final dio = Dio(BaseOptions(
+    baseUrl: ApiConfig.baseUrl,
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
+  ));
+  dio.interceptors.add(ApiKeyInterceptor());
+  dio.interceptors.add(PrettyDioLogger(
+    requestHeader: false,
+    responseHeader: false,
+    requestBody: false,
+    responseBody: true,
+    error: true,
+    compact: true,
+  ));
+  getIt.registerSingleton<Dio>(dio);
+  getIt.registerLazySingleton<JokesRepository>(() => JokesRepository(getIt<Dio>()));
+  getIt.registerFactory<JokesCubit>(() => JokesCubit(getIt<JokesRepository>()));
+}
